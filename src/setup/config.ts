@@ -24,6 +24,7 @@ interface Config {
   ONBOARDING_FIREFOX_EXTENSION_INSTALL_LINK: string;
   ONBOARDING_PROXY_INSTALL_LINK: string;
   ALLOW_AUTOPLAY: boolean;
+  VITE_BACKEND_SERVICE_URL: string;
 }
 
 export interface RuntimeConfig {
@@ -66,6 +67,7 @@ const env: Record<keyof Config, undefined | string> = {
   CDN_REPLACEMENTS: import.meta.env.VITE_CDN_REPLACEMENTS,
   HAS_ONBOARDING: import.meta.env.VITE_HAS_ONBOARDING,
   ALLOW_AUTOPLAY: import.meta.env.VITE_ALLOW_AUTOPLAY,
+  VITE_BACKEND_SERVICE_URL: import.meta.env.VITE_BACKEND_SERVICE_URL,
 };
 
 function coerceUndefined(value: string | null | undefined): string | undefined {
