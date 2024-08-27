@@ -1,10 +1,10 @@
 /* eslint-disable no-plusplus */
 import {
-  flags,
   FullScraperEvents,
   RunOutput,
   ScrapeMedia,
   Stream,
+  flags,
 } from "@movie-web/providers";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
@@ -15,11 +15,16 @@ import {
   getCachedMetadata,
   makeProviderUrl,
 } from "@/backend/helpers/providerApi";
+import {
+  ServerModel,
+  SourceModel,
+  SubtitleModel,
+} from "@/backend/metadata/types/mw";
+import { getSources } from "@/backend/metadata/vidsrc";
 import { getLoadbalancedProviderApiUrl } from "@/backend/providers/fetchers";
 import { getProviders } from "@/backend/providers/providers";
 import { usePreferencesStore } from "@/stores/preferences";
-import { ServerModel, SourceModel, SubtitleModel } from "@/backend/metadata/types/mw";
-import { getSources } from "@/backend/metadata/vidsrc";
+import { labelToLanguageCode } from "@/utils/language";
 
 export interface ScrapingItems {
   id: string;
@@ -212,10 +217,12 @@ export function useScrape() {
               captions: response.subtitles?.length
                 ? response.subtitles.map((subtitle: SubtitleModel) => {
                     return {
-                      type: "vtt",
                       id: subtitle.file,
                       url: subtitle.file,
-                      language: subtitle.label,
+                      type: subtitle.type || "vtt",
+                      language: subtitle.languageCode
+                        ? subtitle.languageCode
+                        : labelToLanguageCode(subtitle.label) || subtitle.label,
                       hasCorsRestrictions: false,
                     };
                   })

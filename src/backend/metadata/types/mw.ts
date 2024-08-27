@@ -72,8 +72,10 @@ export interface ServerResponse {
 }
 
 export interface SubtitleModel {
+  type: "vtt" | "srt";
   file: string;
   label: string;
+  languageCode: string;
 }
 
 export interface SourceModel {
