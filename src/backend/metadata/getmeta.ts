@@ -170,7 +170,9 @@ export async function getMetaFromId(
   let seasonData: TMDBSeasonMetaResult | undefined;
 
   if (type === MWMediaType.SERIES) {
-    const seasons = (details as TMDBShowData).seasons;
+    const seasons = (details as TMDBShowData).seasons.filter(
+      (item) => !!item.season_number,
+    );
 
     let selectedSeason = seasons.find((v) => v.id.toString() === seasonId);
     if (!selectedSeason) {
