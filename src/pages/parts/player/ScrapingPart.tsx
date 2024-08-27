@@ -5,10 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useMountedState } from "react-use";
 import type { AsyncReturnType } from "type-fest";
 
-import {
-  scrapePartsToProviderMetric,
-  useReportProviders,
-} from "@/backend/helpers/report";
+import { useReportProviders } from "@/backend/helpers/report";
 import { Button } from "@/components/buttons/Button";
 import { Loading } from "@/components/layout/Loading";
 import {
@@ -71,13 +68,6 @@ export function ScrapingPart(props: ScrapingProps) {
       props.onResult?.(
         resultRef.current.sources,
         resultRef.current.sourceOrder,
-      );
-      report(
-        scrapePartsToProviderMetric(
-          props.media,
-          resultRef.current.sourceOrder,
-          resultRef.current.sources,
-        ),
       );
       props.onGetStream?.(output);
     })().catch(() => setFailedStartScrape(true));

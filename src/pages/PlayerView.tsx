@@ -20,9 +20,10 @@ import { parseTimestamp } from "@/utils/timestamp";
 export function RealPlayerView() {
   const navigate = useNavigate();
   const params = useParams<{
-    media: string;
-    episode?: string;
+    id: string;
+    type: string;
     season?: string;
+    episode?: string;
   }>();
   const [errorData, setErrorData] = useState<{
     sources: Record<string, ScrapingSegment>;
@@ -41,7 +42,8 @@ export function RealPlayerView() {
   const backUrl = useLastNonPlayerLink();
 
   const paramsData = JSON.stringify({
-    media: params.media,
+    id: params.id,
+    type: params.type,
     season: params.season,
     episode: params.episode,
   });
@@ -51,11 +53,13 @@ export function RealPlayerView() {
 
   const metaChange = useCallback(
     (meta: PlayerMeta) => {
-      if (meta?.type === "show")
-        navigate(
-          `/media/${params.media}/${meta.season?.tmdbId}/${meta.episode?.tmdbId}`,
-        );
-      else navigate(`/media/${params.media}`);
+      const { id, type } = params;
+      if (meta?.type === "show") {
+        const path: string = `/embed/${type}/${id}`;
+        navigate(`${path}/${meta.season?.number}/${meta.episode?.number}`);
+      } else {
+        navigate(`/embed/${type}/${id}`);
+      }
     },
     [navigate, params],
   );
