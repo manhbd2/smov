@@ -62,6 +62,7 @@ export function usePlayerMeta() {
           imdbId: m.imdbId,
         };
       }
+      playerMeta.servers = m.servers;
       setDirectMeta(playerMeta);
       return playerMeta;
     },

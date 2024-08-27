@@ -2,7 +2,6 @@
 import {
   FullScraperEvents,
   RunOutput,
-  ScrapeMedia,
   Stream,
   flags,
 } from "@movie-web/providers";
@@ -16,6 +15,7 @@ import {
   makeProviderUrl,
 } from "@/backend/helpers/providerApi";
 import {
+  MWScrapeMedia,
   ServerModel,
   SourceModel,
   SubtitleModel,
@@ -196,7 +196,7 @@ export function useScrape() {
   const preferredSourceOrder = usePreferencesStore((s) => s.sourceOrder);
 
   const startScrapingSource = useCallback(
-    async (media: ScrapeMedia) => {
+    async (media: MWScrapeMedia) => {
       if (!media.servers?.length) {
         return getResult(null);
       }
@@ -266,7 +266,7 @@ export function useScrape() {
   );
 
   const startScraping = useCallback(
-    async (media: ScrapeMedia) => {
+    async (media: MWScrapeMedia) => {
       const providerApiUrl = getLoadbalancedProviderApiUrl();
       if (providerApiUrl && !isExtensionActiveCached()) {
         startScrape();

@@ -1,3 +1,5 @@
+import { ScrapeMedia } from "@movie-web/providers";
+
 import { TMDBContentTypes } from "./tmdb";
 
 export enum MWMediaType {
@@ -87,3 +89,7 @@ export interface SourceModel {
 export interface SourceResponse {
   data: SourceModel;
 }
+
+export type MWScrapeMedia = ScrapeMedia & {
+  servers?: ServerModel[];
+};

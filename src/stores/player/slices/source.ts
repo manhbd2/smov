@@ -1,5 +1,4 @@
-import { ScrapeMedia } from "@movie-web/providers";
-
+import { MWScrapeMedia, ServerModel } from "@/backend/metadata/types/mw";
 import { MakeSlice } from "@/stores/player/slices/types";
 import {
   SourceQuality,
@@ -39,6 +38,7 @@ export interface PlayerMeta {
     tmdbId: string;
     title: string;
   };
+  servers?: ServerModel[];
 }
 
 export interface Caption {
@@ -91,7 +91,7 @@ export interface SourceSlice {
   redisplaySource(startAt: number): void;
 }
 
-export function metaToScrapeMedia(meta: PlayerMeta): ScrapeMedia {
+export function metaToScrapeMedia(meta: PlayerMeta): MWScrapeMedia {
   if (meta.type === "show") {
     if (!meta.episode || !meta.season) throw new Error("missing show data");
     return {
@@ -102,6 +102,7 @@ export function metaToScrapeMedia(meta: PlayerMeta): ScrapeMedia {
       imdbId: meta.imdbId,
       episode: meta.episode,
       season: meta.season,
+      servers: meta.servers,
     };
   }
 
@@ -111,6 +112,7 @@ export function metaToScrapeMedia(meta: PlayerMeta): ScrapeMedia {
     tmdbId: meta.tmdbId,
     type: "movie",
     imdbId: meta.imdbId,
+    servers: meta.servers,
   };
 }
 

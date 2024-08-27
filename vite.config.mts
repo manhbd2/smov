@@ -24,6 +24,9 @@ const captioningPackages = [
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
   return {
+    server: {
+      port: 8080,
+    },
     base: env.VITE_BASE_URL || '/',
     plugins: [
       million.vite({ auto: true, mute: true }),
