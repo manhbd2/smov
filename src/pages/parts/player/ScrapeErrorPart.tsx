@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 import { sendPage } from "@/backend/extension/messaging";
 import { Button } from "@/components/buttons/Button";
@@ -30,7 +30,6 @@ export function ScrapeErrorPart(props: ScrapeErrorPartProps) {
   const location = useLocation();
   const [extensionState, setExtensionState] =
     useState<ExtensionStatus>("unknown");
-  const navigate = useNavigate();
 
   const error = useMemo(() => {
     const data = props.data;
@@ -108,24 +107,6 @@ export function ScrapeErrorPart(props: ScrapeErrorPartProps) {
         </IconPill>
         <Title>{t("player.scraping.notFound.title")}</Title>
         <Paragraph>{t("player.scraping.notFound.text")}</Paragraph>
-        <div className="flex gap-3">
-          <Button
-            href="/"
-            theme="secondary"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.scraping.notFound.homeButton")}
-          </Button>
-          <Button
-            onClick={() => navigate("/discover")}
-            theme="secondary"
-            padding="md:px-12 p-2.5"
-            className="mt-6"
-          >
-            {t("player.scraping.notFound.discoverButton")}
-          </Button>
-        </div>
         <Button
           onClick={() => modal.show()}
           theme="purple"
