@@ -1,7 +1,10 @@
+/* eslint-disable no-plusplus */
 import {
+  flags,
   FullScraperEvents,
   RunOutput,
   ScrapeMedia,
+  Stream,
 } from "@movie-web/providers";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 
@@ -15,6 +18,8 @@ import {
 import { getLoadbalancedProviderApiUrl } from "@/backend/providers/fetchers";
 import { getProviders } from "@/backend/providers/providers";
 import { usePreferencesStore } from "@/stores/preferences";
+import { ServerModel, SourceModel, SubtitleModel } from "@/backend/metadata/types/mw";
+import { getSources } from "@/backend/metadata/vidsrc";
 
 export interface ScrapingItems {
   id: string;
@@ -40,6 +45,30 @@ function useBaseScrape() {
   const [sourceOrder, setSourceOrder] = useState<ScrapingItems[]>([]);
   const [currentSource, setCurrentSource] = useState<string>();
   const lastId = useRef<string | null>(null);
+
+  const initSourceOrder = useCallback((servers: ServerModel[]) => {
+    setSources(
+      servers
+        .map((server: ServerModel) => {
+          return {
+            percentage: 0,
+            id: server.hash,
+            name: server.name,
+            status: "waiting",
+          } as ScrapingSegment;
+        })
+        .reduce<Record<string, ScrapingSegment>>(
+          (accumulator, currentValue) => {
+            accumulator[currentValue.id] = currentValue;
+            return accumulator;
+          },
+          {},
+        ),
+    );
+    setSourceOrder(
+      servers.map((server: ServerModel) => ({ id: server.hash, children: [] })),
+    );
+  }, []);
 
   const initEvent = useCallback((evt: ScraperEvent<"init">) => {
     setSources(
@@ -138,6 +167,7 @@ function useBaseScrape() {
     discoverEmbedsEvent,
     startScrape,
     getResult,
+    initSourceOrder,
     sources,
     sourceOrder,
     currentSource,
@@ -155,9 +185,78 @@ export function useScrape() {
     getResult,
     startEvent,
     startScrape,
+    initSourceOrder,
   } = useBaseScrape();
 
   const preferredSourceOrder = usePreferencesStore((s) => s.sourceOrder);
+
+  const startScrapingSource = useCallback(
+    async (media: ScrapeMedia) => {
+      if (!media.servers?.length) {
+        return getResult(null);
+      }
+      startScrape();
+      initSourceOrder(media.servers);
+      let result: RunOutput | null = null;
+      for (let i = 0; i < media.servers.length; i++) {
+        startEvent(media.servers[i].hash);
+        const server: ServerModel = media.servers[i];
+        try {
+          const response: SourceModel = await getSources(server.hash);
+          if (response.source.length) {
+            const stream: Stream = {
+              type: "hls",
+              id: server.hash,
+              playlist: response.source,
+              flags: [flags.CORS_ALLOWED],
+              captions: response.subtitles?.length
+                ? response.subtitles.map((subtitle: SubtitleModel) => {
+                    return {
+                      type: "vtt",
+                      id: subtitle.file,
+                      url: subtitle.file,
+                      language: subtitle.label,
+                      hasCorsRestrictions: false,
+                    };
+                  })
+                : [],
+            };
+            result = {
+              stream,
+              sourceId: server.hash,
+            } as RunOutput;
+            break;
+          } else {
+            const failure: ScraperEvent<"update"> = {
+              id: server.hash,
+              status: "failure",
+              error: "source not found",
+              reason: "Failed to fetch source",
+              percentage: 100,
+            };
+            updateEvent(failure);
+          }
+        } catch (error) {
+          let errorMessage: string = "";
+          if (typeof error === "string") {
+            errorMessage = error;
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          const failure: ScraperEvent<"update"> = {
+            id: server.hash,
+            status: "failure",
+            error: errorMessage,
+            reason: "Failed to fetch source",
+            percentage: 100,
+          };
+          updateEvent(failure);
+        }
+      }
+      return getResult(result);
+    },
+    [getResult, startEvent, updateEvent, startScrape, initSourceOrder],
+  );
 
   const startScraping = useCallback(
     async (media: ScrapeMedia) => {
@@ -209,6 +308,7 @@ export function useScrape() {
 
   return {
     startScraping,
+    startScrapingSource,
     sourceOrder,
     sources,
     currentSource,

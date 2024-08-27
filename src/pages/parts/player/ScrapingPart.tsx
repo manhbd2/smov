@@ -35,7 +35,8 @@ export interface ScrapingProps {
 
 export function ScrapingPart(props: ScrapingProps) {
   const { report } = useReportProviders();
-  const { startScraping, sourceOrder, sources, currentSource } = useScrape();
+  const { startScrapingSource, sourceOrder, sources, currentSource } =
+    useScrape();
   const isMounted = useMountedState();
   const { t } = useTranslation();
 
@@ -65,7 +66,7 @@ export function ScrapingPart(props: ScrapingProps) {
     if (started.current) return;
     started.current = true;
     (async () => {
-      const output = await startScraping(props.media);
+      const output = await startScrapingSource(props.media);
       if (!isMounted()) return;
       props.onResult?.(
         resultRef.current.sources,
@@ -80,7 +81,7 @@ export function ScrapingPart(props: ScrapingProps) {
       );
       props.onGetStream?.(output);
     })().catch(() => setFailedStartScrape(true));
-  }, [startScraping, props, report, isMounted]);
+  }, [startScrapingSource, props, report, isMounted]);
 
   let currentProviderIndex = sourceOrder.findIndex(
     (s) => s.id === currentSource || s.children.includes(currentSource ?? ""),
