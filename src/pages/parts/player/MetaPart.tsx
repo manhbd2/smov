@@ -9,9 +9,15 @@ import {
   fetchMetadata,
   setCachedMetadata,
 } from "@/backend/helpers/providerApi";
-import { DetailedMeta, getMetaFromId } from "@/backend/metadata/getmeta";
-import { decodeTMDBId } from "@/backend/metadata/tmdb";
-import { MWMediaType } from "@/backend/metadata/types/mw";
+import { DetailedMeta, getMetaFromRequest } from "@/backend/metadata/getmeta";
+import { TMDBMediaToMediaType } from "@/backend/metadata/tmdb";
+import {
+  MWMediaType,
+  MetaRequest,
+  ServerModel,
+} from "@/backend/metadata/types/mw";
+import { TMDBContentTypes } from "@/backend/metadata/types/tmdb";
+import { getServers } from "@/backend/metadata/vidsrc";
 import { getLoadbalancedProviderApiUrl } from "@/backend/providers/fetchers";
 import { getProviders } from "@/backend/providers/providers";
 import { Button } from "@/components/buttons/Button";
@@ -37,13 +43,24 @@ function isDisallowedMedia(id: string, type: MWMediaType): boolean {
 export function MetaPart(props: MetaPartProps) {
   const { t } = useTranslation();
   const params = useParams<{
-    media: string;
+    id: string;
+    type: TMDBContentTypes;
     episode?: string;
     season?: string;
   }>();
+  const { id, type } = params;
   const navigate = useNavigate();
 
   const { error, value, loading } = useAsync(async () => {
+    if (!id || !type) {
+      return null;
+    }
+    if (params.season && Number.isNaN(params.season)) {
+      return null;
+    }
+    if (params.episode && Number.isNaN(params.episode)) {
+      return null;
+    }
     const info = await extensionInfo();
     const isValidExtension =
       info?.success && isAllowedExtensionVersion(info.version) && info.allowed;
@@ -67,21 +84,19 @@ export function MetaPart(props: MetaPartProps) {
       ]);
     }
 
-    // get media meta data
-    let data: ReturnType<typeof decodeTMDBId> = null;
-    try {
-      if (!params.media) throw new Error("no media params");
-      data = decodeTMDBId(params.media);
-    } catch {
-      // error dont matter, itll just be a 404
-    }
-    if (!data) return null;
+    if (isDisallowedMedia(id, TMDBMediaToMediaType(type)))
+      throw new Error("dmca");
 
-    if (isDisallowedMedia(data.id, data.type)) throw new Error("dmca");
+    const request: MetaRequest = {
+      id,
+      type,
+      season: Number(params.season),
+      episode: Number(params.episode),
+    };
 
-    let meta: AsyncReturnType<typeof getMetaFromId> = null;
+    let meta: AsyncReturnType<typeof getMetaFromRequest> = null;
     try {
-      meta = await getMetaFromId(data.type, data.id, params.season);
+      meta = await getMetaFromRequest(request);
     } catch (err) {
       if ((err as any).status === 404) {
         return null;
@@ -90,25 +105,49 @@ export function MetaPart(props: MetaPartProps) {
     }
     if (!meta) return null;
 
-    // replace link with new link if youre not already on the right link
-    let epId = params.episode;
-    if (meta.meta.type === MWMediaType.SERIES) {
-      let ep = meta.meta.seasonData.episodes.find(
-        (v) => v.id === params.episode,
-      );
-      if (!ep) ep = meta.meta.seasonData.episodes[0];
-      epId = ep.id;
-      if (
-        params.season !== meta.meta.seasonData.id ||
-        params.episode !== ep.id
-      ) {
-        navigate(`/media/${params.media}/${meta.meta.seasonData.id}/${ep.id}`, {
-          replace: true,
-        });
-      }
+    const servers: ServerModel[] = await getServers(request);
+    if (!servers?.length) {
+      return null;
     }
 
-    props.onGetMeta?.(meta, epId);
+    meta.servers = servers;
+    if (meta.meta.type !== MWMediaType.SERIES) {
+      props.onGetMeta?.(meta);
+      return;
+    }
+
+    const {
+      meta: { seasonData },
+    } = meta;
+    const { episodes } = seasonData;
+    const seasonNumber = seasonData.number;
+    const episodeNumber = episodes[0].number;
+
+    // not season and not episode
+    if (!params.season && !params.episode) {
+      navigate(`/embed/${type}/${id}/${seasonNumber}/${episodeNumber}`, {
+        replace: true,
+      });
+      props.onGetMeta?.(meta, episodes[0].id);
+      return;
+    }
+
+    // replace link with new link if youre not already on the right link
+    let episodeId: string = "";
+    if (params.episode && Number.isNaN(params.episode)) {
+      const episode = episodes.find(
+        (i) => i.number.toString() === params.episode,
+      );
+      if (!episode?.id) return null;
+      episodeId = episode.id;
+    } else {
+      episodeId = episodes[0].id;
+      navigate(`/embed/${type}/${id}/${seasonNumber}/${episodes[0].number}`, {
+        replace: true,
+      });
+    }
+
+    props.onGetMeta?.(meta, episodeId);
   }, []);
 
   if (error && error.message === "extension-no-permission") {

@@ -21,7 +21,7 @@ interface Config {
   ONBOARDING_CHROME_EXTENSION_INSTALL_LINK: string;
   ONBOARDING_FIREFOX_EXTENSION_INSTALL_LINK: string;
   ONBOARDING_PROXY_INSTALL_LINK: string;
-  VITE_BACKEND_SERVICE_URL: string;
+  VITE_VIDSRC_SERVICE_URL: string;
 }
 
 export interface RuntimeConfig {
@@ -40,7 +40,7 @@ export interface RuntimeConfig {
   ONBOARDING_CHROME_EXTENSION_INSTALL_LINK: string | null;
   ONBOARDING_FIREFOX_EXTENSION_INSTALL_LINK: string | null;
   ONBOARDING_PROXY_INSTALL_LINK: string | null;
-  VITE_BACKEND_SERVICE_URL: string;
+  VITE_VIDSRC_SERVICE_URL: string;
 }
 
 const env: Record<keyof Config, undefined | string> = {
@@ -62,7 +62,7 @@ const env: Record<keyof Config, undefined | string> = {
   TURNSTILE_KEY: import.meta.env.VITE_TURNSTILE_KEY,
   CDN_REPLACEMENTS: import.meta.env.VITE_CDN_REPLACEMENTS,
   HAS_ONBOARDING: import.meta.env.VITE_HAS_ONBOARDING,
-  VITE_BACKEND_SERVICE_URL: import.meta.env.VITE_BACKEND_SERVICE_URL,
+  VITE_VIDSRC_SERVICE_URL: import.meta.env.VITE_VIDSRC_SERVICE_URL,
 };
 
 // loads from different locations, in order: environment (VITE_{KEY}), window (public/config.js)
@@ -100,7 +100,7 @@ export function conf(): RuntimeConfig {
       proxyInstallLink.length > 0 ? proxyInstallLink : null,
     BACKEND_URL: getKey("BACKEND_URL", BACKEND_URL),
     TMDB_READ_API_KEY: getKey("TMDB_READ_API_KEY"),
-    VITE_BACKEND_SERVICE_URL: getKey("VITE_BACKEND_SERVICE_URL"),
+    VITE_VIDSRC_SERVICE_URL: getKey("VITE_VIDSRC_SERVICE_URL"),
     PROXY_URLS: getKey("CORS_PROXY_URL")
       .split(",")
       .map((v) => v.trim()),

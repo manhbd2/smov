@@ -1,3 +1,5 @@
+import { TMDBContentTypes } from "./tmdb";
+
 export enum MWMediaType {
   MOVIE = "movie",
   SERIES = "series",
@@ -50,4 +52,36 @@ export interface DetailedMeta {
   meta: MWMediaMeta;
   imdbId?: string;
   tmdbId?: string;
+}
+
+export interface MetaRequest {
+  id: string;
+  type: TMDBContentTypes;
+  season?: number | undefined;
+  episode?: number | undefined;
+  seasonId?: string | undefined;
+}
+
+export interface ServerModel {
+  name: string;
+  hash: string;
+}
+
+export interface ServerResponse {
+  data: ServerModel[];
+}
+
+export interface SubtitleModel {
+  file: string;
+  label: string;
+}
+
+export interface SourceModel {
+  source: string;
+  thumbnails: string;
+  subtitles: SubtitleModel[];
+}
+
+export interface SourceResponse {
+  data: SourceModel;
 }

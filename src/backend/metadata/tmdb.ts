@@ -6,6 +6,9 @@ import { MediaItem } from "@/utils/mediaTypes";
 import { MWMediaMeta, MWMediaType, MWSeasonMeta } from "./types/mw";
 import {
   ExternalIdMovieSearchResult,
+  ExternalIdSearchResult,
+  ResultMovieModel,
+  ResultTvModel,
   TMDBContentTypes,
   TMDBEpisodeShort,
   TMDBMediaResult,
@@ -239,6 +242,43 @@ export function getMediaDetails<
 
 export function getMediaPoster(posterPath: string | null): string | undefined {
   if (posterPath) return `https://image.tmdb.org/t/p/w342/${posterPath}`;
+}
+
+export async function findDataFromExternalId(
+  id: string,
+  externalSource: string,
+): Promise<ExternalIdSearchResult> {
+  const data = await get<ExternalIdSearchResult>(`/find/${id}`, {
+    external_source: externalSource,
+  });
+
+  return data;
+}
+
+export async function findMovieFromExternalId(
+  id: string,
+  externalSource: string,
+): Promise<ResultMovieModel | null> {
+  const data = await findDataFromExternalId(id, externalSource);
+
+  if (!data || !data.movie_results || !data.movie_results.length) {
+    return null;
+  }
+
+  return data.movie_results[0];
+}
+
+export async function findShowFromExternalId(
+  id: string,
+  externalSource: string,
+): Promise<ResultTvModel | null> {
+  const data = await findDataFromExternalId(id, externalSource);
+
+  if (!data || !data.tv_results || !data.tv_results.length) {
+    return null;
+  }
+
+  return data.tv_results[0];
 }
 
 export async function getEpisodes(

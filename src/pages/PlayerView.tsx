@@ -1,12 +1,6 @@
 import { RunOutput } from "@movie-web/providers";
 import { useCallback, useEffect, useState } from "react";
-import {
-  Navigate,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-import { useAsync } from "react-use";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { usePlayer } from "@/components/player/hooks/usePlayer";
 import { usePlayerMeta } from "@/components/player/hooks/usePlayerMeta";
@@ -21,7 +15,6 @@ import { ScrapeErrorPart } from "@/pages/parts/player/ScrapeErrorPart";
 import { ScrapingPart } from "@/pages/parts/player/ScrapingPart";
 import { useLastNonPlayerLink } from "@/stores/history";
 import { PlayerMeta, playerStatus } from "@/stores/player/slices/source";
-import { needsOnboarding } from "@/utils/onboarding";
 import { parseTimestamp } from "@/utils/timestamp";
 
 export function RealPlayerView() {
@@ -117,23 +110,6 @@ export function RealPlayerView() {
 }
 
 export function PlayerView() {
-  const loc = useLocation();
-  const { loading, error, value } = useAsync(() => {
-    return needsOnboarding();
-  });
-
-  if (error) throw new Error("Failed to detect onboarding");
-  if (loading) return null;
-  if (value)
-    return (
-      <Navigate
-        replace
-        to={{
-          pathname: "/onboarding",
-          search: `redirect=${encodeURIComponent(loc.pathname)}`,
-        }}
-      />
-    );
   return <RealPlayerView />;
 }
 

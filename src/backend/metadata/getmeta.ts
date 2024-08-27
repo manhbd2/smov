@@ -4,6 +4,8 @@ import { formatJWMeta, mediaTypeToJW } from "./justwatch";
 import {
   TMDBIdToUrlId,
   TMDBMediaToMediaType,
+  findMovieFromExternalId,
+  findShowFromExternalId,
   formatTMDBMeta,
   getEpisodes,
   getMediaDetails,
@@ -16,8 +18,9 @@ import {
   JWSeasonMetaResult,
   JW_API_BASE,
 } from "./types/justwatch";
-import { MWMediaMeta, MWMediaType } from "./types/mw";
+import { MWMediaMeta, MWMediaType, MetaRequest, ServerModel } from "./types/mw";
 import {
+  ResultMovieModel,
   TMDBContentTypes,
   TMDBMediaResult,
   TMDBMovieData,
@@ -30,10 +33,11 @@ export interface DetailedMeta {
   meta: MWMediaMeta;
   imdbId?: string;
   tmdbId?: string;
+  servers?: ServerModel[];
 }
 
 export function formatTMDBMetaResult(
-  details: TMDBShowData | TMDBMovieData,
+  details: TMDBShowData | TMDBMovieData | ResultMovieModel,
   type: MWMediaType,
 ): TMDBMediaResult {
   if (type === MWMediaType.MOVIE) {
@@ -63,6 +67,91 @@ export function formatTMDBMetaResult(
   }
 
   throw new Error("unsupported type");
+}
+
+export async function getMeta(
+  request: MetaRequest,
+): Promise<DetailedMeta | null> {
+  const { id, type, season, seasonId } = request;
+  const details = await getMediaDetails(id, type);
+
+  if (!details) return null;
+
+  const imdbId = details.external_ids.imdb_id ?? undefined;
+
+  let seasonData: TMDBSeasonMetaResult | undefined;
+
+  if (type === TMDBContentTypes.TV) {
+    const seasons = (details as TMDBShowData).seasons;
+
+    let selectedSeason = seasons.find(
+      (item) =>
+        item.season_number === season || item.id.toString() === seasonId,
+    );
+
+    if (request.season && !selectedSeason) {
+      return null;
+    }
+
+    if (!selectedSeason) {
+      selectedSeason = seasons.find((v) => v.season_number === 1);
+    }
+
+    if (selectedSeason) {
+      const episodes = await getEpisodes(
+        details.id.toString(),
+        selectedSeason.season_number,
+      );
+
+      seasonData = {
+        id: selectedSeason.id.toString(),
+        season_number: selectedSeason.season_number,
+        title: selectedSeason.name,
+        episodes,
+      };
+    }
+
+    if (request.episode) {
+      const episode = seasonData?.episodes.find(
+        (item) => item.episode_number === request.episode,
+      );
+      if (!episode) return null;
+    }
+  }
+
+  const tmdbmeta = formatTMDBMetaResult(details, TMDBMediaToMediaType(type));
+  if (!tmdbmeta) return null;
+  const meta = formatTMDBMeta(tmdbmeta, seasonData);
+  if (!meta) return null;
+
+  return {
+    meta,
+    imdbId,
+    tmdbId: id,
+  };
+}
+
+export async function getMetaFromRequest(
+  request: MetaRequest,
+): Promise<DetailedMeta | null> {
+  const { id, type } = request;
+  if (id.startsWith("tt") && type === TMDBContentTypes.MOVIE) {
+    const movieResponse = await findMovieFromExternalId(id, "imdb_id");
+    if (!movieResponse) return null;
+    const tmdbMeta = formatTMDBMetaResult(movieResponse, MWMediaType.MOVIE);
+    return {
+      imdbId: id,
+      tmdbId: movieResponse.id.toString(),
+      meta: formatTMDBMeta(tmdbMeta),
+    };
+  }
+  if (id.startsWith("tt") && type === TMDBContentTypes.TV) {
+    const showResponse = await findShowFromExternalId(id, "imdb_id");
+    if (!showResponse) return null;
+    request.id = showResponse.id.toString();
+  }
+
+  return getMeta(request);
 }
 
 export async function getMetaFromId(
