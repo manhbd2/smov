@@ -40,4 +40,3 @@ function handleToken(token, path) {
 }
 
 handleToken(themeTokens, []);
-console.log(JSON.stringify(output, null, 2));

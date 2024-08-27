@@ -23,7 +23,9 @@ export function useSubtitleList(subs: CaptionListItem[], searchQuery: string) {
     const input = subs.map((t) => ({
       ...t,
       languageName:
-        getPrettyLanguageNameFromLocale(t.language) ?? unknownChoice,
+        getPrettyLanguageNameFromLocale(t.language) ??
+        t.language ??
+        unknownChoice,
     }));
     const sorted = sortLangCodes(input.map((t) => t.language));
     let results = input.sort((a, b) => {

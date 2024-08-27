@@ -1,3 +1,4 @@
+import { MetaOutput } from "@movie-web/providers";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAsync } from "react-use";
@@ -52,6 +53,7 @@ export function MetaPart(props: MetaPartProps) {
   const navigate = useNavigate();
 
   const { error, value, loading } = useAsync(async () => {
+    setCachedMetadata([]);
     if (!id || !type) {
       return null;
     }
@@ -67,21 +69,6 @@ export function MetaPart(props: MetaPartProps) {
 
     if (isValidExtension) {
       if (!info.hasPermission) throw new Error("extension-no-permission");
-    }
-
-    // use api metadata or providers metadata
-    const providerApiUrl = getLoadbalancedProviderApiUrl();
-    if (providerApiUrl && !isValidExtension) {
-      try {
-        await fetchMetadata(providerApiUrl);
-      } catch (err) {
-        throw new Error("failed-api-metadata");
-      }
-    } else {
-      setCachedMetadata([
-        ...getProviders().listSources(),
-        ...getProviders().listEmbeds(),
-      ]);
     }
 
     if (isDisallowedMedia(id, TMDBMediaToMediaType(type)))
@@ -109,6 +96,20 @@ export function MetaPart(props: MetaPartProps) {
     if (!servers?.length) {
       return null;
     }
+
+    const metaOutput: MetaOutput[] = servers.map(
+      (server: ServerModel, index: number) => {
+        return {
+          rank: index,
+          type: "source",
+          id: server.hash,
+          name: server.name,
+          mediaTypes: ["movie", "show"],
+        } as MetaOutput;
+      },
+    );
+
+    setCachedMetadata(metaOutput);
 
     meta.servers = servers;
     if (meta.meta.type !== MWMediaType.SERIES) {
