@@ -27,8 +27,13 @@ async function get<T>(url: string, params?: object): Promise<T> {
 }
 
 export async function getServers(request: MetaRequest): Promise<ServerModel[]> {
-  const { id, type } = request;
-  const data = await get<ServerResponse>(`/${id}/servers?type=${type}`);
+  const params: Record<string, string> = {};
+  const { id, type, season, episode } = request;
+  if (season && episode) {
+    params.season = season.toString();
+    params.episode = episode.toString();
+  }
+  const data = await get<ServerResponse>(`/${id}/servers?type=${type}`, params);
   return data.data;
 }
 

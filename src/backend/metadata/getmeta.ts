@@ -82,14 +82,16 @@ export async function getMeta(
   let seasonData: TMDBSeasonMetaResult | undefined;
 
   if (type === TMDBContentTypes.TV) {
-    const seasons = (details as TMDBShowData).seasons;
+    const seasons = (details as TMDBShowData).seasons.filter(
+      (item) => !!item.season_number,
+    );
 
     let selectedSeason = seasons.find(
       (item) =>
         item.season_number === season || item.id.toString() === seasonId,
     );
 
-    if (request.season && !selectedSeason) {
+    if ((request.season || request.seasonId) && !selectedSeason) {
       return null;
     }
 

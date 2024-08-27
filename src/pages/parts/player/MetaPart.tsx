@@ -6,10 +6,7 @@ import type { AsyncReturnType } from "type-fest";
 
 import { isAllowedExtensionVersion } from "@/backend/extension/compatibility";
 import { extensionInfo, sendPage } from "@/backend/extension/messaging";
-import {
-  fetchMetadata,
-  setCachedMetadata,
-} from "@/backend/helpers/providerApi";
+import { setCachedMetadata } from "@/backend/helpers/providerApi";
 import { DetailedMeta, getMetaFromRequest } from "@/backend/metadata/getmeta";
 import { TMDBMediaToMediaType } from "@/backend/metadata/tmdb";
 import {
@@ -19,8 +16,6 @@ import {
 } from "@/backend/metadata/types/mw";
 import { TMDBContentTypes } from "@/backend/metadata/types/tmdb";
 import { getServers } from "@/backend/metadata/vidsrc";
-import { getLoadbalancedProviderApiUrl } from "@/backend/providers/fetchers";
-import { getProviders } from "@/backend/providers/providers";
 import { Button } from "@/components/buttons/Button";
 import { Icons } from "@/components/Icon";
 import { IconPill } from "@/components/layout/IconPill";
@@ -32,6 +27,22 @@ import { conf } from "@/setup/config";
 
 export interface MetaPartProps {
   onGetMeta?: (meta: DetailedMeta, episodeId?: string) => void;
+}
+
+function handleMetaOutput(servers: ServerModel[]): void {
+  const metaOutput: MetaOutput[] = servers.map(
+    (server: ServerModel, index: number) => {
+      return {
+        rank: index,
+        type: "source",
+        id: server.hash,
+        name: server.name,
+        mediaTypes: ["movie", "show"],
+      } as MetaOutput;
+    },
+  );
+
+  setCachedMetadata(metaOutput);
 }
 
 function isDisallowedMedia(id: string, type: MWMediaType): boolean {
@@ -92,28 +103,14 @@ export function MetaPart(props: MetaPartProps) {
     }
     if (!meta) return null;
 
-    const servers: ServerModel[] = await getServers(request);
-    if (!servers?.length) {
-      return null;
-    }
-
-    const metaOutput: MetaOutput[] = servers.map(
-      (server: ServerModel, index: number) => {
-        return {
-          rank: index,
-          type: "source",
-          id: server.hash,
-          name: server.name,
-          mediaTypes: ["movie", "show"],
-        } as MetaOutput;
-      },
-    );
-
-    setCachedMetadata(metaOutput);
-
-    meta.servers = servers;
+    // movie type
     if (meta.meta.type !== MWMediaType.SERIES) {
+      const servers: ServerModel[] = await getServers(request);
+      if (!servers?.length) {
+        return null;
+      }
       props.onGetMeta?.(meta);
+      handleMetaOutput(servers);
       return;
     }
 
@@ -124,30 +121,35 @@ export function MetaPart(props: MetaPartProps) {
     const seasonNumber = seasonData.number;
     const episodeNumber = episodes[0].number;
 
-    // not season and not episode
-    if (!params.season && !params.episode) {
+    // replace link with new link if youre not already on the right link
+    let episodeId: string = "";
+    request.season = seasonNumber;
+
+    // not season and not episode -> default
+    if (!params.episode) {
+      episodeId = episodes[0].id;
+      request.episode = episodeNumber;
       navigate(`/embed/${type}/${id}/${seasonNumber}/${episodeNumber}`, {
         replace: true,
       });
-      props.onGetMeta?.(meta, episodes[0].id);
-      return;
-    }
-
-    // replace link with new link if youre not already on the right link
-    let episodeId: string = "";
-    if (params.episode && Number.isNaN(params.episode)) {
-      const episode = episodes.find(
-        (i) => i.number.toString() === params.episode,
-      );
-      if (!episode?.id) return null;
-      episodeId = episode.id;
     } else {
-      episodeId = episodes[0].id;
-      navigate(`/embed/${type}/${id}/${seasonNumber}/${episodes[0].number}`, {
-        replace: true,
-      });
+      const episode = episodes.find(
+        (item) => item.number.toString() === params.episode,
+      );
+      if (!episode?.id) {
+        return null;
+      }
+      episodeId = episode.id;
+      request.episode = episode.number;
     }
 
+    const servers: ServerModel[] = await getServers(request);
+    if (!servers?.length) {
+      return null;
+    }
+
+    meta.servers = servers;
+    handleMetaOutput(servers);
     props.onGetMeta?.(meta, episodeId);
   }, []);
 
