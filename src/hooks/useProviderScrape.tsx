@@ -56,7 +56,7 @@ function useBaseScrape() {
       servers
         .map((server: ServerModel) => {
           return {
-            percentage: 0,
+            percentage: 40,
             id: server.hash,
             name: server.name,
             status: "waiting",

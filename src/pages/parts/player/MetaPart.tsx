@@ -1,4 +1,3 @@
-import { MetaOutput } from "@movie-web/providers";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAsync } from "react-use";
@@ -6,7 +5,10 @@ import type { AsyncReturnType } from "type-fest";
 
 import { isAllowedExtensionVersion } from "@/backend/extension/compatibility";
 import { extensionInfo, sendPage } from "@/backend/extension/messaging";
-import { setCachedMetadata } from "@/backend/helpers/providerApi";
+import {
+  handleMetaOutput,
+  setCachedMetadata,
+} from "@/backend/helpers/providerApi";
 import { DetailedMeta, getMetaFromRequest } from "@/backend/metadata/getmeta";
 import { TMDBMediaToMediaType } from "@/backend/metadata/tmdb";
 import {
@@ -27,22 +29,6 @@ import { conf } from "@/setup/config";
 
 export interface MetaPartProps {
   onGetMeta?: (meta: DetailedMeta, episodeId?: string) => void;
-}
-
-function handleMetaOutput(servers: ServerModel[]): void {
-  const metaOutput: MetaOutput[] = servers.map(
-    (server: ServerModel, index: number) => {
-      return {
-        rank: index,
-        type: "source",
-        id: server.hash,
-        name: server.name,
-        mediaTypes: ["movie", "show"],
-      } as MetaOutput;
-    },
-  );
-
-  setCachedMetadata(metaOutput);
 }
 
 function isDisallowedMedia(id: string, type: MWMediaType): boolean {
@@ -109,6 +95,7 @@ export function MetaPart(props: MetaPartProps) {
       if (!servers?.length) {
         return null;
       }
+      meta.servers = servers;
       props.onGetMeta?.(meta);
       handleMetaOutput(servers);
       return;

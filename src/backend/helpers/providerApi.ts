@@ -4,6 +4,8 @@ import { jwtDecode } from "jwt-decode";
 import { mwFetch } from "@/backend/helpers/fetch";
 import { getTurnstileToken, isTurnstileInitialized } from "@/stores/turnstile";
 
+import { ServerModel } from "../metadata/types/mw";
+
 let metaDataCache: MetaOutput[] | null = null;
 let token: null | string = null;
 
@@ -13,6 +15,22 @@ export function setCachedMetadata(data: MetaOutput[]) {
 
 export function getCachedMetadata(): MetaOutput[] {
   return metaDataCache ?? [];
+}
+
+export function handleMetaOutput(servers: ServerModel[]): void {
+  const metaOutput: MetaOutput[] = servers.map(
+    (server: ServerModel, index: number) => {
+      return {
+        rank: index,
+        type: "source",
+        id: server.hash,
+        name: server.name,
+        mediaTypes: ["movie", "show"],
+      } as MetaOutput;
+    },
+  );
+
+  setCachedMetadata(metaOutput);
 }
 
 export function setApiToken(newToken: string) {

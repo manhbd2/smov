@@ -3,10 +3,19 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAsync } from "react-use";
 
+import { handleMetaOutput } from "@/backend/helpers/providerApi";
 import { getMetaFromId } from "@/backend/metadata/getmeta";
-import { MWMediaType, MWSeasonMeta } from "@/backend/metadata/types/mw";
+import { mediaTypeToTMDB } from "@/backend/metadata/tmdb";
+import {
+  MWMediaType,
+  MWSeasonMeta,
+  MetaRequest,
+  ServerModel,
+} from "@/backend/metadata/types/mw";
+import { getServers } from "@/backend/metadata/vidsrc";
 import { Icons } from "@/components/Icon";
 import { ProgressRing } from "@/components/layout/ProgressRing";
+import { Spinner } from "@/components/layout/Spinner";
 import { OverlayAnchor } from "@/components/overlays/OverlayAnchor";
 import { Overlay } from "@/components/overlays/OverlayDisplay";
 import { OverlayPage } from "@/components/overlays/OverlayPage";
@@ -109,15 +118,35 @@ function EpisodesView({
   const router = useOverlayRouter(id);
   const { setPlayerMeta } = usePlayerMeta();
   const meta = usePlayerStore((s) => s.meta);
+
+  const [loadingId, setLoadingId] = useState("");
+
   const [loadingState] = useSeasonData(meta?.tmdbId ?? "", selectedSeason);
   const progress = useProgressStore();
 
   const playEpisode = useCallback(
-    (episodeId: string) => {
-      if (loadingState.value) {
-        const newData = setPlayerMeta(loadingState.value.fullData, episodeId);
-        if (newData) onChange?.(newData);
+    async (episodeId: string) => {
+      if (!loadingState.value) {
+        router.close(true);
+        return;
       }
+      setLoadingId(episodeId);
+      const request: MetaRequest = {
+        id: loadingState.value?.fullData.imdbId || "",
+        type: mediaTypeToTMDB(loadingState.value?.fullData.meta.type),
+        season: loadingState.value.season.number,
+        episode: loadingState.value.season.episodes.find(
+          (item) => item.id === episodeId,
+        )?.number,
+      };
+      const servers: ServerModel[] = await getServers(request);
+      handleMetaOutput(servers);
+      loadingState.value.fullData.servers = servers;
+      const newData = setPlayerMeta(loadingState.value.fullData, episodeId);
+      if (newData) {
+        onChange?.(newData);
+      }
+      setLoadingId("");
       // prevent router clear here, otherwise its done double
       // player already switches route after meta change
       router.close(true);
@@ -152,7 +181,9 @@ function EpisodesView({
             progress.items[meta?.tmdbId]?.episodes?.[ep.id];
 
           let rightSide;
-          if (episodeProgress) {
+          if (loadingId === ep.id) {
+            rightSide = <Spinner className="text-lg" />;
+          } else if (episodeProgress) {
             const percentage =
               (episodeProgress.progress.watched /
                 episodeProgress.progress.duration) *
