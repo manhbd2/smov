@@ -25,6 +25,7 @@ interface Config {
   ONBOARDING_PROXY_INSTALL_LINK: string;
   ALLOW_AUTOPLAY: boolean;
   VITE_VIDSRC_SERVICE_URL: string;
+  VITE_VIDSRC_HOME: string;
 }
 
 export interface RuntimeConfig {
@@ -46,6 +47,7 @@ export interface RuntimeConfig {
   ONBOARDING_FIREFOX_EXTENSION_INSTALL_LINK: string | null;
   ONBOARDING_PROXY_INSTALL_LINK: string | null;
   VITE_VIDSRC_SERVICE_URL: string;
+  VITE_VIDSRC_HOME: string;
 }
 
 const env: Record<keyof Config, undefined | string> = {
@@ -69,6 +71,7 @@ const env: Record<keyof Config, undefined | string> = {
   HAS_ONBOARDING: import.meta.env.VITE_HAS_ONBOARDING,
   ALLOW_AUTOPLAY: import.meta.env.VITE_ALLOW_AUTOPLAY,
   VITE_VIDSRC_SERVICE_URL: import.meta.env.VITE_VIDSRC_SERVICE_URL,
+  VITE_VIDSRC_HOME: import.meta.env.VITE_VIDSRC_HOME,
 };
 
 function coerceUndefined(value: string | null | undefined): string | undefined {
@@ -107,6 +110,7 @@ export function conf(): RuntimeConfig {
     ),
     ONBOARDING_PROXY_INSTALL_LINK: getKey("ONBOARDING_PROXY_INSTALL_LINK"),
     BACKEND_URL: getKey("BACKEND_URL", BACKEND_URL),
+    VITE_VIDSRC_HOME: getKey("VITE_VIDSRC_HOME", ""),
     VITE_VIDSRC_SERVICE_URL: getKey("VITE_VIDSRC_SERVICE_URL", ""),
     TMDB_READ_API_KEY: getKey("TMDB_READ_API_KEY"),
     PROXY_URLS: getKey("CORS_PROXY_URL", "")

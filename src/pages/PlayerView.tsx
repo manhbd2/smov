@@ -13,7 +13,6 @@ import { PlaybackErrorPart } from "@/pages/parts/player/PlaybackErrorPart";
 import { PlayerPart } from "@/pages/parts/player/PlayerPart";
 import { ScrapeErrorPart } from "@/pages/parts/player/ScrapeErrorPart";
 import { ScrapingPart } from "@/pages/parts/player/ScrapingPart";
-import { useLastNonPlayerLink } from "@/stores/history";
 import { PlayerMeta, playerStatus } from "@/stores/player/slices/source";
 import { parseTimestamp } from "@/utils/timestamp";
 
@@ -39,7 +38,6 @@ export function RealPlayerView() {
     setShouldStartFromBeginning,
   } = usePlayer();
   const { setPlayerMeta, scrapeMedia } = usePlayerMeta();
-  const backUrl = useLastNonPlayerLink();
 
   const paramsData = JSON.stringify({
     id: params.id,
@@ -88,7 +86,7 @@ export function RealPlayerView() {
   );
 
   return (
-    <PlayerPart backUrl={backUrl} onMetaChange={metaChange}>
+    <PlayerPart onMetaChange={metaChange}>
       {status === playerStatus.IDLE ? (
         <MetaPart onGetMeta={setPlayerMeta} />
       ) : null}

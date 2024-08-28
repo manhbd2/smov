@@ -33,6 +33,7 @@ export async function getServers(request: MetaRequest): Promise<ServerModel[]> {
     params.season = season.toString();
     params.episode = episode.toString();
   }
+  params.key = "jXJLbo0gVoVspfOlg3IQqY5qib5zFqho";
   const data = await get<ServerResponse>(`/${id}/servers?type=${type}`, params);
   return data.data;
 }

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Icon, Icons } from "@/components/Icon";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { conf } from "@/setup/config";
 
 export function BrandPill(props: {
   clickable?: boolean;
@@ -12,10 +13,15 @@ export function BrandPill(props: {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
+  const handleOpenPage = () => {
+    window.open(conf().VITE_VIDSRC_HOME);
+  };
+
   return (
     <div
+      onClick={handleOpenPage}
       className={classNames(
-        "flex items-center space-x-2 rounded-full px-4 py-2 text-type-logo",
+        "flex items-center space-x-2 rounded-full px-4 py-2 text-type-logo cursor-pointer",
         props.backgroundClass ?? "bg-pill-background bg-opacity-50",
         props.clickable
           ? "transition-[transform,background-color] hover:scale-105 hover:bg-pill-backgroundHover backdrop-blur-lg hover:text-type-logo active:scale-95"
