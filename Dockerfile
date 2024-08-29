@@ -10,7 +10,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 ARG PWA_ENABLED="true"
 ARG GA_ID
-ARG APP_DOMAIN
+ARG APP_DOMAIN="https://vidsrc.cc"
 ARG OPENSEARCH_ENABLED="false"
 ARG TMDB_READ_API_KEY="eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmYWNkMmE1YWE0YmMwMzAyZjNhZmRlYTIwZGQ2YWRhZSIsInN1YiI6IjY1OTEyNjU1NjUxZmNmNWYxMzhlMWRjNyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.5boG-w-nlk-SWB8hvFeWq_DNRbrU6n5XEXleVQ1L1Sg"
 ARG CORS_PROXY_URL
@@ -49,6 +49,9 @@ RUN pnpm run build
 
 # production environment
 FROM nginx:stable-alpine
+
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /app/dist /usr/share/nginx/html
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
