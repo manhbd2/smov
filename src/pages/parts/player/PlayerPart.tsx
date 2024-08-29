@@ -66,7 +66,7 @@ export function PlayerPart(props: PlayerPartProps) {
             <Player.EpisodeTitle />
           </div>
           <div className="hidden sm:flex items-center justify-end">
-            <BrandPill />
+            <BrandPill clickable />
           </div>
           <div className="flex sm:hidden items-center justify-end">
             {status === playerStatus.PLAYING ? (
